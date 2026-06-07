@@ -19,7 +19,7 @@ use app::{
     setup::{set_global_shortcut, set_system_tray},
     window::{open_additional_window_safe, set_window, MultiWindowState},
 };
-use util::get_pake_config;
+use util::{focus_window_and_webview, get_pake_config};
 
 pub fn run_app() {
     #[cfg(target_os = "linux")]
@@ -71,7 +71,7 @@ pub fn run_app() {
                 } else if let Some(window) = app.get_webview_window("pake") {
                     let _ = window.unminimize();
                     let _ = window.show();
-                    let _ = window.set_focus();
+                    focus_window_and_webview(&window);
                 }
             },
         ));
@@ -130,13 +130,13 @@ pub fn run_app() {
                         if init_fullscreen {
                             let _ = window_clone.set_fullscreen(true);
                             // Ensure webview maintains focus for input after fullscreen
-                            let _ = window_clone.set_focus();
+                            focus_window_and_webview(&window_clone);
                         } else {
                             // Fix: Ubuntu 24.04/GNOME window buttons non-functional until resize (#1122)
                             // The window manager needs time to process the MapWindow event before
                             // accepting focus requests. Without this, decorations remain non-interactive.
                             tokio::time::sleep(tokio::time::Duration::from_millis(30)).await;
-                            let _ = window_clone.set_focus();
+                            focus_window_and_webview(&window_clone);
                         }
                     }
                 });
@@ -192,7 +192,7 @@ pub fn run_app() {
                 if !has_visible_windows {
                     if let Some(window) = _app.get_webview_window("pake") {
                         let _ = window.show();
-                        let _ = window.set_focus();
+                        focus_window_and_webview(&window);
                     }
                 }
             }

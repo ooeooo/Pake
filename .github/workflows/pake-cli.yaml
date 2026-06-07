@@ -52,6 +52,14 @@ on:
         description: "Package formats (comma-separated: deb,appimage,rpm)"
         required: false
         default: "deb"
+      activation_shortcut:
+        description: "Global shortcut to toggle app visibility"
+        required: false
+        default: ""
+      inject:
+        description: "Inject CSS/JS files"
+        required: false
+        default: ""
 
 jobs:
   build:
@@ -120,6 +128,14 @@ jobs:
             ARGS+=("--hide-title-bar")
           fi
 
+          if [ -n "${{ inputs.activation_shortcut }}" ]; then
+            ARGS+=("--activation-shortcut" "${{ inputs.activation_shortcut }}")
+          fi
+
+          if [ -n "${{ inputs.inject }}" ]; then
+            ARGS+=("--inject" "${{ inputs.inject }}")
+          fi
+
           if [ "${{ inputs.multi_arch }}" == "true" ]; then
             ARGS+=("--multi-arch")
           fi
@@ -156,6 +172,14 @@ jobs:
 
           if ("${{ inputs.hide_title_bar }}" -eq "true") {
             $args += "--hide-title-bar"
+          }
+
+          if ("${{ inputs.activation_shortcut }}" -ne "") {
+            $args += "--activation-shortcut", "${{ inputs.activation_shortcut }}"
+          }
+
+          if ("${{ inputs.inject }}" -ne "") {
+            $args += "--inject", "${{ inputs.inject }}"
           }
 
           Write-Host "Running: node dist/cli.js $($args -join ' ')"

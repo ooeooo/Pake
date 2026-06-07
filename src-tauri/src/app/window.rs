@@ -1,6 +1,7 @@
 use crate::app::config::PakeConfig;
 use crate::util::{
-    check_file_or_append, get_data_dir, get_download_message_with_lang, show_toast, MessageType,
+    check_file_or_append, focus_window_and_webview, get_data_dir, get_download_message_with_lang,
+    show_toast, MessageType,
 };
 use std::{
     path::PathBuf,
@@ -96,7 +97,7 @@ fn open_requested_window(
 
     let title = target_url.host_str().unwrap_or(target_url.as_str());
     let _ = window.set_title(title);
-    let _ = window.set_focus();
+    focus_window_and_webview(&window);
 
     Ok(window)
 }
@@ -108,7 +109,7 @@ pub fn open_additional_window_safe(app: &AppHandle) {
         std::thread::spawn(move || {
             if let Ok(window) = open_additional_window(&app_handle) {
                 let _ = window.show();
-                let _ = window.set_focus();
+                focus_window_and_webview(&window);
             }
         });
     }
@@ -117,7 +118,7 @@ pub fn open_additional_window_safe(app: &AppHandle) {
     {
         if let Ok(window) = open_additional_window(app) {
             let _ = window.show();
-            let _ = window.set_focus();
+            focus_window_and_webview(&window);
         }
     }
 }

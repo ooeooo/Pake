@@ -54,6 +54,23 @@ pub fn show_toast(window: &WebviewWindow, message: &str) {
     }
 }
 
+pub fn focus_webview_script() -> &'static str {
+    r#"(() => {
+  window.focus();
+  const activeElement = document.activeElement;
+  if (activeElement && typeof activeElement.focus === "function") {
+    activeElement.focus({ preventScroll: true });
+  }
+})();"#
+}
+
+pub fn focus_window_and_webview(window: &WebviewWindow) {
+    let _ = window.set_focus();
+    if let Err(error) = window.eval(focus_webview_script()) {
+        eprintln!("[Pake] Failed to focus webview: {error}");
+    }
+}
+
 pub enum MessageType {
     Start,
     Success,
@@ -241,5 +258,13 @@ mod tests {
         let zh = get_download_message_with_lang(MessageType::Failure, Some("zh".into()));
         assert!(en.contains("Download failed"));
         assert!(zh.contains("下载失败"));
+    }
+
+    #[test]
+    fn focus_webview_script_focuses_window_and_active_element() {
+        let script = focus_webview_script();
+        assert!(script.contains("window.focus()"));
+        assert!(script.contains("document.activeElement"));
+        assert!(script.contains("preventScroll: true"));
     }
 }
