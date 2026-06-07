@@ -102,6 +102,9 @@ export interface PakeCliOptions {
   // Start app minimized to tray, default false
   startToTray: boolean;
 
+  // Register app to auto start with the system login session, default false
+  autoStart: boolean;
+
   // Force navigation to stay inside the Pake window even for external links
   forceInternalNavigation: boolean;
 
@@ -186,6 +189,7 @@ export interface PakeConfig {
   proxy_url: string;
   multi_instance: boolean;
   multi_window: boolean;
+  auto_start: boolean;
   inject?: string[];
 }
 

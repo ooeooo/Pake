@@ -10,6 +10,7 @@ describe("ChatGPT workflow build options", () => {
   it("exposes activation shortcut and inject inputs", () => {
     expect(workflow).toContain("activation_shortcut:");
     expect(workflow).toContain("Inject CSS/JS files");
+    expect(workflow).toContain("auto_start:");
   });
 
   it("passes activation shortcut and inject options in bash builds", () => {
@@ -17,6 +18,7 @@ describe("ChatGPT workflow build options", () => {
       'ARGS+=("--activation-shortcut" "${{ inputs.activation_shortcut }}")',
     );
     expect(workflow).toContain('ARGS+=("--inject" "${{ inputs.inject }}")');
+    expect(workflow).toContain('ARGS+=("--auto-start")');
   });
 
   it("passes activation shortcut and inject options in Windows builds", () => {
@@ -24,6 +26,7 @@ describe("ChatGPT workflow build options", () => {
       '$args += "--activation-shortcut", "${{ inputs.activation_shortcut }}"',
     );
     expect(workflow).toContain('$args += "--inject", "${{ inputs.inject }}"');
+    expect(workflow).toContain('$args += "--auto-start"');
   });
 
   it("contains the ChatGPT icon and inject script assets used by the workflow", () => {

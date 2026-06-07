@@ -700,7 +700,7 @@ async function writeAllConfigs(tauriConf, platform) {
 }
 async function mergeConfig(url, options, tauriConf) {
     await copyTemplateConfigs();
-    const { appVersion, userAgent, showSystemTray, useLocalFile, identifier, name = 'pake-app', installerLanguage, wasm, camera, microphone, } = options;
+    const { appVersion, userAgent, showSystemTray, autoStart, useLocalFile, identifier, name = 'pake-app', installerLanguage, wasm, camera, microphone, } = options;
     const platform = asSupportedPlatform(process.platform);
     const tauriConfWindowOptions = buildWindowConfigOverrides(options, platform);
     Object.assign(tauriConf.pake.windows[0], { url, ...tauriConfWindowOptions });
@@ -730,6 +730,7 @@ async function mergeConfig(url, options, tauriConf) {
         tauriConf.pake.user_agent[currentPlatform] = userAgent;
     }
     tauriConf.pake.system_tray[currentPlatform] = showSystemTray;
+    tauriConf.pake.auto_start = autoStart;
     if (platform === 'linux') {
         await mergeLinuxConfig(options, name, tauriConf, linuxBinaryName);
     }
@@ -2414,6 +2415,7 @@ const DEFAULT_PAKE_OPTIONS = {
     multiInstance: false,
     multiWindow: false,
     startToTray: false,
+    autoStart: false,
     forceInternalNavigation: false,
     internalUrlRegex: '',
     enableFind: false,
@@ -2549,6 +2551,9 @@ ${green('|_|   \\__,_|_|\\_\\___|  can turn any webpage into a desktop app with 
         .hideHelp())
         .addOption(new Option('--start-to-tray', 'Start app minimized to tray')
         .default(DEFAULT_PAKE_OPTIONS.startToTray)
+        .hideHelp())
+        .addOption(new Option('--auto-start', 'Register app to auto start with the system login session')
+        .default(DEFAULT_PAKE_OPTIONS.autoStart)
         .hideHelp())
         .addOption(new Option('--force-internal-navigation', 'Keep every link inside the Pake window instead of opening external handlers')
         .default(DEFAULT_PAKE_OPTIONS.forceInternalNavigation)

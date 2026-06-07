@@ -3,6 +3,8 @@ use std::env;
 use std::path::{Path, PathBuf};
 use tauri::{AppHandle, Config, Manager, WebviewWindow};
 
+pub const AUTO_START_HIDDEN_ARG: &str = "--pake-start-hidden";
+
 pub fn get_pake_config() -> (PakeConfig, Config) {
     #[cfg(feature = "cli-build")]
     let pake_config: PakeConfig = serde_json::from_str(include_str!("../.pake/pake.json"))
@@ -69,6 +71,19 @@ pub fn focus_window_and_webview(window: &WebviewWindow) {
     if let Err(error) = window.eval(focus_webview_script()) {
         eprintln!("[Pake] Failed to focus webview: {error}");
     }
+}
+
+pub fn started_from_auto_start_args<I, S>(args: I) -> bool
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<str>,
+{
+    args.into_iter()
+        .any(|arg| arg.as_ref() == AUTO_START_HIDDEN_ARG)
+}
+
+pub fn started_from_auto_start() -> bool {
+    started_from_auto_start_args(std::env::args())
 }
 
 pub enum MessageType {
@@ -266,5 +281,21 @@ mod tests {
         assert!(script.contains("window.focus()"));
         assert!(script.contains("document.activeElement"));
         assert!(script.contains("preventScroll: true"));
+    }
+
+    #[test]
+    fn started_from_auto_start_detects_hidden_start_argument() {
+        assert!(started_from_auto_start_args([
+            "ChatGPT".to_string(),
+            AUTO_START_HIDDEN_ARG.to_string(),
+        ]));
+    }
+
+    #[test]
+    fn started_from_auto_start_ignores_regular_launch_arguments() {
+        assert!(!started_from_auto_start_args([
+            "ChatGPT".to_string(),
+            "--regular".to_string(),
+        ]));
     }
 }

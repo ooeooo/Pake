@@ -46,4 +46,12 @@ describe('CLI options', () => {
     expect(option?.defaultValue).toBe(false);
     expect(option?.hidden).toBe(true);
   });
+
+  it('registers hidden --auto-start option', () => {
+    const option = program.options.find((item) => item.long === '--auto-start');
+
+    expect(option).toBeDefined();
+    expect(option?.defaultValue).toBe(false);
+    expect(option?.hidden).toBe(true);
+  });
 });

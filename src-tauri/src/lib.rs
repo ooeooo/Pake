@@ -3,6 +3,7 @@ mod app;
 mod util;
 
 use tauri::Manager;
+use tauri_plugin_autostart::ManagerExt as AutostartManagerExt;
 use tauri_plugin_window_state::Builder as WindowStatePlugin;
 use tauri_plugin_window_state::StateFlags;
 
@@ -19,7 +20,26 @@ use app::{
     setup::{set_global_shortcut, set_system_tray},
     window::{open_additional_window_safe, set_window, MultiWindowState},
 };
-use util::{focus_window_and_webview, get_pake_config};
+use util::{
+    focus_window_and_webview, get_pake_config, started_from_auto_start, AUTO_START_HIDDEN_ARG,
+};
+
+fn sync_auto_start(app: &tauri::AppHandle, enabled: bool) {
+    let manager = app.autolaunch();
+    let result = if enabled {
+        manager.enable()
+    } else {
+        match manager.is_enabled() {
+            Ok(true) => manager.disable(),
+            Ok(false) => Ok(()),
+            Err(error) => Err(error),
+        }
+    };
+
+    if let Err(error) = result {
+        eprintln!("[Pake] Failed to sync auto start setting: {error}");
+    }
+}
 
 pub fn run_app() {
     #[cfg(target_os = "linux")]
@@ -40,8 +60,10 @@ pub fn run_app() {
     let activation_shortcut = pake_config.windows[0].activation_shortcut.clone();
     let init_fullscreen = pake_config.windows[0].fullscreen;
     let start_to_tray = pake_config.windows[0].start_to_tray && show_system_tray; // Only valid when tray is enabled
+    let start_hidden = start_to_tray || started_from_auto_start();
     let multi_instance = pake_config.multi_instance;
     let multi_window = pake_config.multi_window;
+    let auto_start = pake_config.auto_start;
     let _enable_find = pake_config.windows[0].enable_find;
 
     let window_state_plugin = WindowStatePlugin::default()
@@ -60,6 +82,10 @@ pub fn run_app() {
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            Some(vec![AUTO_START_HIDDEN_ARG]),
+        ))
         .plugin(tauri_plugin_opener::init()); // Add this
 
     // Only add single instance plugin if multiple instances are not allowed
@@ -115,10 +141,11 @@ pub fn run_app() {
                 multi_window,
             )?;
             set_global_shortcut(app.app_handle(), activation_shortcut, init_fullscreen)?;
+            sync_auto_start(app.app_handle(), auto_start);
 
             // Show window after state restoration to prevent position flashing
-            // Unless start_to_tray is enabled, then keep it hidden
-            if !start_to_tray {
+            // Unless tray/autostart asks for a hidden launch.
+            if !start_hidden {
                 let window_clone = window.clone();
                 tauri::async_runtime::spawn(async move {
                     tokio::time::sleep(tokio::time::Duration::from_millis(WINDOW_SHOW_DELAY)).await;

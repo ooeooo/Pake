@@ -60,6 +60,11 @@ on:
         description: "Inject CSS/JS files"
         required: false
         default: ""
+      auto_start:
+        description: "Register app to auto start with the system login session"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -136,6 +141,10 @@ jobs:
             ARGS+=("--inject" "${{ inputs.inject }}")
           fi
 
+          if [ "${{ inputs.auto_start }}" == "true" ]; then
+            ARGS+=("--auto-start")
+          fi
+
           if [ "${{ inputs.multi_arch }}" == "true" ]; then
             ARGS+=("--multi-arch")
           fi
@@ -180,6 +189,10 @@ jobs:
 
           if ("${{ inputs.inject }}" -ne "") {
             $args += "--inject", "${{ inputs.inject }}"
+          }
+
+          if ("${{ inputs.auto_start }}" -eq "true") {
+            $args += "--auto-start"
           }
 
           Write-Host "Running: node dist/cli.js $($args -join ' ')"

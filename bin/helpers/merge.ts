@@ -431,6 +431,7 @@ export async function mergeConfig(
     appVersion,
     userAgent,
     showSystemTray,
+    autoStart,
     useLocalFile,
     identifier,
     name = 'pake-app',
@@ -477,6 +478,7 @@ export async function mergeConfig(
     tauriConf.pake.user_agent[currentPlatform] = userAgent;
   }
   tauriConf.pake.system_tray[currentPlatform] = showSystemTray;
+  tauriConf.pake.auto_start = autoStart;
 
   if (platform === 'linux') {
     await mergeLinuxConfig(options, name, tauriConf, linuxBinaryName);

@@ -42,6 +42,7 @@ export const DEFAULT_PAKE_OPTIONS: PakeCliOptions = {
   multiInstance: false,
   multiWindow: false,
   startToTray: false,
+  autoStart: false,
   forceInternalNavigation: false,
   internalUrlRegex: '',
   enableFind: false,

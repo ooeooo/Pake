@@ -6,10 +6,76 @@ use std::time::{Duration, Instant};
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder},
     tray::{TrayIconBuilder, TrayIconEvent},
-    AppHandle, Manager,
+    AppHandle, Manager, WebviewWindow,
 };
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
+
+#[derive(Debug, PartialEq, Eq)]
+enum WindowActivationAction {
+    Hide,
+    ShowAndFocus,
+}
+
+fn activation_action(is_visible: bool, is_focused: bool) -> WindowActivationAction {
+    if is_visible && is_focused {
+        WindowActivationAction::Hide
+    } else {
+        WindowActivationAction::ShowAndFocus
+    }
+}
+
+fn show_and_focus_window(window: &WebviewWindow, _init_fullscreen: bool) {
+    let _ = window.unminimize();
+    let _ = window.show();
+    focus_window_and_webview(window);
+
+    #[cfg(target_os = "linux")]
+    if _init_fullscreen && !window.is_fullscreen().unwrap_or(false) {
+        let _ = window.set_fullscreen(true);
+        focus_window_and_webview(window);
+    }
+}
+
+fn activate_or_hide_window(window: &WebviewWindow, init_fullscreen: bool) {
+    let is_visible = window.is_visible().unwrap_or(false);
+    let is_focused = window.is_focused().unwrap_or(false);
+
+    match activation_action(is_visible, is_focused) {
+        WindowActivationAction::Hide => {
+            let _ = window.hide();
+        }
+        WindowActivationAction::ShowAndFocus => {
+            show_and_focus_window(window, init_fullscreen);
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn activation_hides_only_when_visible_and_focused() {
+        assert_eq!(activation_action(true, true), WindowActivationAction::Hide);
+    }
+
+    #[test]
+    fn activation_shows_when_visible_but_in_background() {
+        assert_eq!(
+            activation_action(true, false),
+            WindowActivationAction::ShowAndFocus
+        );
+    }
+
+    #[test]
+    fn activation_shows_when_hidden() {
+        assert_eq!(
+            activation_action(false, false),
+            WindowActivationAction::ShowAndFocus
+        );
+    }
+}
 
 pub fn set_system_tray(
     app: &AppHandle,
@@ -53,13 +119,7 @@ pub fn set_system_tray(
             }
             "show_app" => {
                 if let Some(window) = app.get_webview_window("pake") {
-                    let _ = window.show();
-                    focus_window_and_webview(&window);
-                    #[cfg(target_os = "linux")]
-                    if _init_fullscreen && !window.is_fullscreen().unwrap_or(false) {
-                        let _ = window.set_fullscreen(true);
-                        focus_window_and_webview(&window);
-                    }
+                    show_and_focus_window(&window, _init_fullscreen);
                 }
             }
             "quit" => {
@@ -72,18 +132,7 @@ pub fn set_system_tray(
             TrayIconEvent::Click { button, .. } => {
                 if button == tauri::tray::MouseButton::Left {
                     if let Some(window) = tray.app_handle().get_webview_window("pake") {
-                        let is_visible = window.is_visible().unwrap_or(false);
-                        if is_visible {
-                            let _ = window.hide();
-                        } else {
-                            let _ = window.show();
-                            focus_window_and_webview(&window);
-                            #[cfg(target_os = "linux")]
-                            if _init_fullscreen && !window.is_fullscreen().unwrap_or(false) {
-                                let _ = window.set_fullscreen(true);
-                                focus_window_and_webview(&window);
-                            }
-                        }
+                        activate_or_hide_window(&window, _init_fullscreen);
                     }
                 }
             }
@@ -144,18 +193,7 @@ pub fn set_global_shortcut(
 
                     if shortcut_hotkey.eq(event) {
                         if let Some(window) = app.get_webview_window("pake") {
-                            let is_visible = window.is_visible().unwrap_or(false);
-                            if is_visible {
-                                let _ = window.hide();
-                            } else {
-                                let _ = window.show();
-                                focus_window_and_webview(&window);
-                                #[cfg(target_os = "linux")]
-                                if _init_fullscreen && !window.is_fullscreen().unwrap_or(false) {
-                                    let _ = window.set_fullscreen(true);
-                                    focus_window_and_webview(&window);
-                                }
-                            }
+                            activate_or_hide_window(&window, _init_fullscreen);
                         }
                     }
                 }

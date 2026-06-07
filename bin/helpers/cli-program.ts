@@ -181,6 +181,14 @@ ${green('|_|   \\__,_|_|\\_\\___|  can turn any webpage into a desktop app with 
     )
     .addOption(
       new Option(
+        '--auto-start',
+        'Register app to auto start with the system login session',
+      )
+        .default(DEFAULT.autoStart)
+        .hideHelp(),
+    )
+    .addOption(
+      new Option(
         '--force-internal-navigation',
         'Keep every link inside the Pake window instead of opening external handlers',
       )
